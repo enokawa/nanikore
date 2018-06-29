@@ -30,7 +30,7 @@ import dto.ImageDataRequest;
 public class ImageSearchServlet extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 
-	private static String PATH = "/tmp/inputImage.jpg";
+	private static String PATH = "/usr/local/tomcat/temp/inputImage.jpg";
 	private static String SEARCH_URL = "http://www.google.co.jp/searchbyimage?image_url=%s";
 
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException {
