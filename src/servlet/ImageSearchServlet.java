@@ -5,6 +5,7 @@ import java.io.ByteArrayInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.invoke.MethodHandles;
 import java.util.stream.Collectors;
 
 import javax.imageio.ImageIO;
@@ -15,6 +16,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.codec.binary.Base64;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
@@ -22,6 +25,7 @@ import org.jsoup.select.Elements;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import dto.ImageDataRequest;
+import util.auth.AmazonConnector;
 
 /**
  * Servlet implementation class ImageSearchServlet
@@ -30,11 +34,15 @@ import dto.ImageDataRequest;
 public class ImageSearchServlet extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 
-	private static String PATH = "/usr/local/tomcat/temp/inputImage.jpg";
+	private static final Logger logger = LogManager.getLogger(MethodHandles.lookup().lookupClass());
+	private static String SEARCH_TARGET_PATH = "xxxx";
+	private static String SAVE_TARGET_PATH = "xxxx";
 	private static String SEARCH_URL = "http://www.google.co.jp/searchbyimage?image_url=%s";
 
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException {
 		try {
+			logger.info("receive POST request");
+
 			// 撮影した画像を取得
 			String json = request.getReader().lines().collect(Collectors.joining("\r\n"));
 			ObjectMapper mapper = new ObjectMapper();
@@ -44,11 +52,14 @@ public class ImageSearchServlet extends HttpServlet {
 			byte[] imageBinary = Base64.decodeBase64(imageRequest.imageData);
 			ByteArrayInputStream inputImage = new ByteArrayInputStream(imageBinary);
 			BufferedImage image = ImageIO.read(inputImage);
-			FileOutputStream output = new FileOutputStream(PATH);
+			FileOutputStream output = new FileOutputStream(SAVE_TARGET_PATH);
 			ImageIO.write(image, "jpg", output);
 
+			// 画像を公開
+			String searchTargetPath = AmazonConnector.upload();
+
 			// 撮影した画像でGoogle画像検索
-			Document document = Jsoup.connect(String.format(SEARCH_URL, PATH)).get();
+			Document document = Jsoup.connect(String.format(SEARCH_URL, String.format(SEARCH_TARGET_PATH, searchTargetPath))).get();
 			Elements elements = document.select("#topstuff > div > div > a");
 			String [] keywords = elements.text().split(" ");
 			String result = "...";
@@ -65,4 +76,5 @@ public class ImageSearchServlet extends HttpServlet {
 			e.printStackTrace();
 		}
 	}
+
 }
